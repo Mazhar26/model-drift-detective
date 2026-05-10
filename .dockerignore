@@ -10,4 +10,10 @@ build/
 .idea/
 .vscode/
 *.db
+.git/
+.gitignore
+.dockerignore
 logs/
+screenshots/
+*.md
+!requirements.txt

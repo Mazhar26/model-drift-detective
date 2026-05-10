@@ -1,8 +1,91 @@
 # 🧠 Model Drift Detective
 
+[![CI](https://github.com/Mazhar26/model-drift-detective/actions/workflows/ci.yml/badge.svg)](https://github.com/Mazhar26/model-drift-detective/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688?logo=fastapi&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.45%2B-FF4B4B?logo=streamlit&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6%2B-F7931E?logo=scikit-learn&logoColor=white)
+
 An AI-powered model monitoring platform that detects, explains, and recommends actions for **data drift** in machine learning models. Built with **FastAPI** + **Streamlit** on the Telco Customer Churn dataset.
 
 ---
+
+## 🧩 System Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                        DOCKER COMPOSE                                │
+│                                                                      │
+│  ┌─────────────────────┐         ┌──────────────────────────────┐   │
+│  │   Streamlit (8501)  │  HTTP   │      FastAPI (8000)          │   │
+│  │                     │────────▶│                              │   │
+│  │  ┌───────────────┐  │ /api/v1 │  ┌────────────────────────┐ │   │
+│  │  │ dashboard.py  │  │         │  │     API Router v1      │ │   │
+│  │  ├───────────────┤  │         │  │                        │ │   │
+│  │  │ 1_Overview    │  │         │  │  /detect    /explain   │ │   │
+│  │  │ 2_Drift       │  │         │  │  /impact    /recommend │ │   │
+│  │  │ 3_Explanation │  │         │  │  /importance /timeline │ │   │
+│  │  │ 4_Impact      │  │         │  │  /summary             │ │   │
+│  │  │ 5_Timeline    │  │         │  └──────────┬─────────────┘ │   │
+│  │  │ 6_Importance  │  │         │             │               │   │
+│  │  │ 7_Recommend   │  │         │             ▼               │   │
+│  │  └───────────────┘  │         │  ┌────────────────────────┐ │   │
+│  │                     │         │  │    ML Engine (src/)    │ │   │
+│  │  utils.py ──────────┼────┐    │  │                        │ │   │
+│  │  config.py          │    │    │  │  drift.py     (KS Test)│ │   │
+│  │  logger.py          │    │    │  │  explain.py   (Shifts) │ │   │
+│  └─────────────────────┘    │    │  │  impact.py    (RF Acc) │ │   │
+│                             │    │  │  importance.py(RF Imp) │ │   │
+│                             │    │  │  recommend.py (Rules)  │ │   │
+│                             │    │  │  timeline.py  (Sim)    │ │   │
+│                             │    │  │  data_setup.py(Load)   │ │   │
+│                             │    │  └──────────┬─────────────┘ │   │
+│                             │    │             │               │   │
+│                             │    │             ▼               │   │
+│                             │    │  ┌────────────────────────┐ │   │
+│                             └───▶│  │  Telco Churn Dataset   │ │   │
+│                                  │  │  (data/*.csv)          │ │   │
+│                                  │  └────────────────────────┘ │   │
+│                                  └──────────────────────────────┘   │
+│                                                                      │
+│  Shared: config.py │ logger.py │ .env                                │
+└──────────────────────────────────────────────────────────────────────┘
+         │                                        │
+         ▼                                        ▼
+  ┌─────────────┐                        ┌─────────────────┐
+  │ GitHub CI   │                        │  logs/app.log   │
+  │ (pytest +   │                        │  (structured    │
+  │  smoke +    │                        │   logging)      │
+  │  flake8)    │                        └─────────────────┘
+  └─────────────┘
+```
+
+**Data Flow:**
+```
+User ──▶ Streamlit Dashboard ──▶ HTTP /api/v1/* ──▶ FastAPI Backend
+                                                         │
+                          ┌──────────────────────────────┘
+                          ▼
+              ┌─── drift.py ────── KS Test ──────────┐
+              ├─── explain.py ──── Mean Shift ────────┤
+              ├─── impact.py ───── RF Accuracy ───────┤──▶ JSON Response
+              ├─── importance.py ─ RF Importance ─────┤
+              ├─── recommend.py ── Smart Rules ───────┤
+              └─── timeline.py ─── Drift Sim ─────────┘
+                          │
+                          ▼
+              Telco Customer Churn Dataset (7,043 rows)
+```
+
+---
+
+## 🌐 Live Demo
+
+> [Deploy and add Render/Streamlit Cloud URL here]
+
+---
+
 
 ## 📸 Screenshots
 
@@ -46,6 +129,11 @@ An AI-powered model monitoring platform that detects, explains, and recommends a
 
 ![Recommendations](screenshots/recommendations.png)
 
+### FastAPI Swagger UI
+> Auto-generated interactive API documentation with all endpoints, request/response schemas, and try-it-out functionality.
+
+[Add Swagger UI screenshot here]
+
 ---
 
 ## 🏗️ Architecture
@@ -53,7 +141,7 @@ An AI-powered model monitoring platform that detects, explains, and recommends a
 ```
 model-drift-mvp/
 ├── api/
-│   └── main.py              # FastAPI backend (8 endpoints)
+│   └── main.py              # FastAPI backend (10 endpoints)
 ├── src/
 │   ├── data_setup.py         # Data loading + drift simulation
 │   ├── drift.py              # KS-test based drift detection
@@ -61,7 +149,14 @@ model-drift-mvp/
 │   ├── impact.py             # Model accuracy impact analysis
 │   ├── importance.py         # Feature importance comparison
 │   ├── recommend.py          # Smart action recommendations
-│   └── timeline.py           # Drift simulation over time
+│   ├── timeline.py           # Drift simulation over time
+│   ├── history.py            # SQLite drift history persistence
+│   └── alerts.py             # Email alert system
+├── tests/                    # pytest unit tests (19 tests)
+│   ├── test_drift.py
+│   ├── test_recommend.py
+│   ├── test_impact.py
+│   └── test_config.py
 ├── pages/                    # Streamlit sidebar pages
 │   ├── 1_Overview.py
 │   ├── 2_Drift.py
@@ -72,20 +167,51 @@ model-drift-mvp/
 │   └── 7_Recommendations.py
 ├── data/
 │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
+├── .github/workflows/
+│   └── ci.yml                # GitHub Actions CI pipeline
 ├── dashboard.py              # Streamlit main dashboard
 ├── utils.py                  # Shared utilities (API client)
+├── config.py                 # Centralized configuration
+├── logger.py                 # Structured logging setup
 ├── smoke_test.py             # Automated smoke test (18 checks)
+├── Dockerfile                # FastAPI container
+├── Dockerfile.streamlit      # Streamlit container
+├── docker-compose.yml        # Multi-service orchestration
+├── .pre-commit-config.yaml   # Code quality hooks
+├── CHANGELOG.md              # Release history
+├── LICENSE                   # MIT License
 └── requirements.txt
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start with Docker
 
-### 1. Install Dependencies
+The fastest way to get running — no manual setup needed:
 
 ```bash
+docker-compose up --build
+```
+
+Then open **http://localhost:8501** for the dashboard, and **http://localhost:8000/docs** for the Swagger UI.
+
+To stop:
+
+```bash
+docker-compose down
+```
+
+---
+
+## 🚀 Getting Started (Manual)
+
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/Mazhar26/model-drift-detective.git
+cd model-drift-detective
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
 ### 2. Start the API Server
@@ -111,13 +237,16 @@ Navigate to **http://localhost:8501**
 | Endpoint | Method | Description |
 |---|---|---|
 | `/` | GET | Health check |
-| `/detect?threshold=0.3` | GET | Detect drift above threshold |
-| `/explain` | GET | Explain drifted features |
-| `/impact` | GET | Model accuracy impact analysis |
-| `/recommend` | GET | Smart action recommendations |
-| `/importance` | GET | Feature importance comparison |
-| `/timeline` | GET | Drift simulation over time |
-| `/summary` | GET | Overall system summary |
+| `/api/v1/detect?threshold=0.3` | GET | Detect drift above threshold |
+| `/api/v1/explain` | GET | Explain drifted features |
+| `/api/v1/impact` | GET | Model accuracy impact analysis |
+| `/api/v1/recommend` | GET | Smart action recommendations |
+| `/api/v1/importance` | GET | Feature importance comparison |
+| `/api/v1/timeline` | GET | Drift simulation over time |
+| `/api/v1/summary` | GET | Overall system summary |
+| `/api/v1/history` | GET | Retrieve drift check history (SQLite) |
+| `/api/v1/history/trend` | GET | Daily aggregated drift trends |
+
 
 ---
 
@@ -190,10 +319,38 @@ Results: 18 passed, 0 failed
 - **Frontend:** Streamlit
 - **ML:** scikit-learn (Random Forest), SciPy (KS-test)
 - **Data:** Pandas, NumPy
+- **Containerization:** Docker, Docker Compose
+- **CI/CD:** GitHub Actions
+- **Code Quality:** Black, Flake8, isort, pre-commit
 - **Dataset:** [Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+
+---
+
+## 🧑‍💻 Development Setup
+
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Set Up Pre-commit Hooks
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+This will automatically run **Black** (formatter), **Flake8** (linter), and **isort** (import sorter) on every commit.
+
+### Run Hooks Manually
+
+```bash
+pre-commit run --all-files
+```
 
 ---
 
 ## 📄 License
 
-This project is for educational and demonstration purposes.
+This project is licensed under the [MIT License](LICENSE).

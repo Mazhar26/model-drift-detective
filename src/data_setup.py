@@ -1,14 +1,22 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
+from config import DATA_PATH
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def load_data():
     """
-    Loads Telco dataset and splits into train/live
-    """
+    Loads Telco dataset and splits into train/live with simulated drift.
 
-    df = pd.read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+    Returns:
+        Tuple of (train_df, live_df) DataFrames.
+    """
+    logger.info("Loading dataset from %s", DATA_PATH)
+
+    df = pd.read_csv(DATA_PATH)
 
     # Drop ID
     df = df.drop(columns=["customerID"])
@@ -28,25 +36,29 @@ def load_data():
     # Split
     train_df, live_df = train_test_split(df, test_size=0.3, random_state=42)
 
+    logger.info("Dataset split: train=%d, live=%d", len(train_df), len(live_df))
+
     # ---------------- DRIFT SIMULATION ----------------
     live_df = live_df.copy()
 
-    np.random.seed(42)  # ✅ reproducibility
+    np.random.seed(42)  # reproducibility
 
-    # 🔥 Feature 1 — scale drift
+    # Feature 1 — scale drift
     live_df["MonthlyCharges"] = live_df["MonthlyCharges"] * 1.2
 
-    # 🔥 Feature 2 — shift drift
+    # Feature 2 — shift drift
     live_df["tenure"] = live_df["tenure"] + np.random.normal(5, 2, len(live_df))
 
-    # 🔥 Feature 3 — noise drift
+    # Feature 3 — noise drift
     live_df["TotalCharges"] = live_df["TotalCharges"] + np.random.normal(0, 50, len(live_df))
 
-    # 🔥 Feature 4 — small random noise across all numeric columns (excluding target)
+    # Feature 4 — small random noise across all numeric columns (excluding target)
     numeric_cols = live_df.select_dtypes(include=["float64", "int64"]).columns
     numeric_cols = [c for c in numeric_cols if c != "Churn"]
 
     for col in numeric_cols:
         live_df[col] = live_df[col] + np.random.normal(0, 0.01, len(live_df))
+
+    logger.info("Drift simulation applied to live dataset")
 
     return train_df, live_df

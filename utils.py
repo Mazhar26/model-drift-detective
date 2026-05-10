@@ -1,12 +1,31 @@
 import requests
+from config import API_HOST, API_PORT
 
-BASE_URL = "http://127.0.0.1:8000"
+# Build base URL from centralized config with API version prefix
+BASE_URL = f"http://{API_HOST}:{API_PORT}/api/v1"
+
 
 def fetch_data(endpoint, params=None):
+    """
+    Fetch JSON data from the FastAPI backend (versioned API).
+
+    Args:
+        endpoint: API endpoint name (without leading slash or version prefix).
+                  Example: "detect", "summary", "explain"
+        params: Optional query parameters dict.
+
+    Returns:
+        Parsed JSON response as dict/list, or empty dict on failure.
+    """
     try:
-        res = requests.get(f"{BASE_URL}/{endpoint}", params=params)
+        url = f"{BASE_URL}/{endpoint}"
+        res = requests.get(url, params=params, timeout=30)
         if res.status_code == 200:
             return res.json()
         return {}
-    except:
+    except requests.exceptions.ConnectionError:
+        return {}
+    except requests.exceptions.Timeout:
+        return {}
+    except Exception:
         return {}

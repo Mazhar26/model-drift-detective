@@ -6,3 +6,11 @@ scikit-learn>=1.6.0
 scipy>=1.14.0
 requests>=2.32.0
 numpy>=2.1.0
+python-dotenv>=1.0.0
+
+# ── Dev Tools ──
+black>=24.10.0
+flake8>=7.1.0
+isort>=5.13.0
+pre-commit>=4.0.0
+pytest>=8.3.0

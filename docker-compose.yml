@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────
+# docker-compose.yml — Model Drift Detective
+# Orchestrates FastAPI + Streamlit services
+# ─────────────────────────────────────────────
+version: "3.9"
+
+services:
+  # ── FastAPI Backend ──
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drift-api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    networks:
+      - drift-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  # ── Streamlit Dashboard ──
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: drift-dashboard
+    ports:
+      - "${STREAMLIT_PORT:-8501}:8501"
+    env_file:
+      - .env
+    environment:
+      - API_HOST=api
+      - API_PORT=8000
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - drift-network
+    restart: unless-stopped
+
+networks:
+  drift-network:
+    driver: bridge
