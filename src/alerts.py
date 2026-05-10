@@ -93,7 +93,8 @@ Configure alerts in your .env file.
         html_body = f"""
 <html>
 <body style="font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px;">
-  <div style="max-width: 600px; margin: 0 auto; background: #16213e; border-radius: 12px; padding: 30px; border: 1px solid #0f3460;">
+  <div style="max-width: 600px; margin: 0 auto; background: #16213e; border-radius: 12px;
+              padding: 30px; border: 1px solid #0f3460;">
     <h1 style="color: #e94560; margin-top: 0;">🚨 Model Drift Alert</h1>
     <hr style="border-color: #0f3460;">
 
@@ -109,7 +110,9 @@ Configure alerts in your .env file.
       <tr>
         <td style="color: #a89f91; padding: 8px 0;">Severity</td>
         <td style="padding: 8px 0;">
-          <span style="background: {'#e94560' if severity == 'high' else '#f0a500' if severity == 'medium' else '#4ecca3'};
+          <span style="background: {'#e94560' if severity == 'high'
+                                    else '#f0a500' if severity == 'medium'
+                                    else '#4ecca3'};
                        color: #fff; padding: 4px 12px; border-radius: 4px; font-weight: bold;">
             {severity.upper()}
           </span>

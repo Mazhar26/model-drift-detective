@@ -11,7 +11,7 @@ from src.timeline import simulate_drift_over_time
 from src.importance import feature_importance_analysis
 from src.history import save_drift_result, get_drift_history, get_drift_trend
 from src.alerts import check_and_alert
-from config import DEFAULT_THRESHOLD
+
 from logger import get_logger
 
 logger = get_logger(__name__)
