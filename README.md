@@ -82,7 +82,9 @@ User ──▶ Streamlit Dashboard ──▶ HTTP /api/v1/* ──▶ FastAPI Ba
 
 ## 🌐 Live Demo
 
-> [Deploy and add Render/Streamlit Cloud URL here]
+*   **FastAPI Backend API**: [https://drift-api-5fy5.onrender.com](https://drift-api-5fy5.onrender.com)
+*   **FastAPI Interactive Swagger UI Docs**: [https://drift-api-5fy5.onrender.com/docs](https://drift-api-5fy5.onrender.com/docs)
+*   **Streamlit Web Dashboard**: *(Add your Streamlit Dashboard Live URL here once deployed)*
 
 ---
 
@@ -132,7 +134,7 @@ User ──▶ Streamlit Dashboard ──▶ HTTP /api/v1/* ──▶ FastAPI Ba
 ### FastAPI Swagger UI
 > Auto-generated interactive API documentation with all endpoints, request/response schemas, and try-it-out functionality.
 
-[Add Swagger UI screenshot here]
+![FastAPI Swagger UI](screenshots/swagger_ui.png)
 
 ---
 
