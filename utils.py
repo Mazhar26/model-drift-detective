@@ -1,31 +1,57 @@
 import requests
 from config import API_HOST, API_PORT
 
-# Build base URL from centralized config with API version prefix
+# Centralized versioned API base URL
 BASE_URL = f"http://{API_HOST}:{API_PORT}/api/v1"
 
 
 def fetch_data(endpoint, params=None):
     """
-    Fetch JSON data from the FastAPI backend (versioned API).
+    Fetch JSON data from the FastAPI backend.
 
     Args:
-        endpoint: API endpoint name (without leading slash or version prefix).
-                  Example: "detect", "summary", "explain"
-        params: Optional query parameters dict.
+        endpoint (str):
+            API endpoint name without leading slash.
+            Example: "detect", "impact", "summary"
+
+        params (dict, optional):
+            Query parameters for the request.
 
     Returns:
-        Parsed JSON response as dict/list, or empty dict on failure.
+        dict | list:
+            Parsed JSON response from backend.
+            Returns empty dict on failure.
     """
+
     try:
         url = f"{BASE_URL}/{endpoint}"
-        res = requests.get(url, params=params, timeout=30)
-        if res.status_code == 200:
-            return res.json()
-        return {}
+
+        response = requests.get(
+            url,
+            params=params,
+            timeout=30
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
     except requests.exceptions.ConnectionError:
+        print(f"❌ Connection failed to backend: {url}")
         return {}
+
     except requests.exceptions.Timeout:
+        print(f"⏳ Request timeout: {url}")
         return {}
-    except Exception:
+
+    except requests.exceptions.HTTPError as e:
+        print(f"⚠️ HTTP error: {e}")
+        return {}
+
+    except requests.exceptions.JSONDecodeError:
+        print(f"⚠️ Invalid JSON response from: {url}")
+        return {}
+
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
         return {}

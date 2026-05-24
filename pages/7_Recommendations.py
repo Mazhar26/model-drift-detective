@@ -1,17 +1,15 @@
 import streamlit as st
 from utils import fetch_data
 
-st.title("🤖 Recommendations")
+st.title("🛠 Recommendations")
 
 data = fetch_data("recommend")
 
 if data:
-    for k, v in data.items():
-        if "🚨" in v:
-            st.error(f"{k}: {v}")
-        elif "⚠️" in v:
-            st.warning(f"{k}: {v}")
-        else:
-            st.info(f"{k}: {v}")
+
+    for feature, recommendation in data.items():
+        st.write(f"### {feature}")
+        st.info(recommendation)
+
 else:
-    st.warning("No recommendations")
+    st.success("No recommendations needed")

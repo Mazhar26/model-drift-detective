@@ -8,7 +8,7 @@ from src.explain import explain_drift
 from src.recommend import recommend_actions
 from src.impact import analyze_impact
 from src.timeline import simulate_drift_over_time
-from src.importance import feature_importance_analysis
+from src.importance import get_feature_importance
 from src.history import save_drift_result, get_drift_history, get_drift_trend
 from src.alerts import check_and_alert
 
@@ -53,7 +53,7 @@ class ExplainResponse(RootModel[Dict[str, ExplainFeatureResult]]):
 
 class ImpactResponse(BaseModel):
     """Response model for accuracy impact analysis."""
-    train_accuracy: float = Field(..., description="Model accuracy on training data")
+    validation_accuracy: float = Field(..., description="Model accuracy on training data")
     live_accuracy: float = Field(..., description="Model accuracy on live/drifted data")
     accuracy_drop: float = Field(..., description="Accuracy degradation (train - live)")
 
@@ -168,7 +168,7 @@ def get_importance():
     global _importance_cache
     if _importance_cache is None:
         logger.info("Computing feature importance (first call)")
-        _importance_cache = feature_importance_analysis(train, live)
+        _importance_cache = get_feature_importance(train, live)
     return _importance_cache
 
 

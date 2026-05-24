@@ -4,7 +4,6 @@ from utils import fetch_data
 
 st.title("📊 Drift Detection")
 
-# ✅ 1. Slider
 threshold = st.slider(
     "Drift Threshold",
     0.0,
@@ -15,10 +14,11 @@ threshold = st.slider(
 
 st.info(f"Showing features with drift > {threshold}")
 
-# ✅ 2. API call using shared utility
-data = fetch_data("detect", params={"threshold": threshold})
+data = fetch_data(
+    "detect",
+    params={"threshold": threshold}
+)
 
-# ✅ 3. Process + Display
 if data:
     df = pd.DataFrame.from_dict(data, orient="index")
 
@@ -26,7 +26,6 @@ if data:
 
         df = df.sort_values(by="drift_score", ascending=False)
 
-        # 🔥 Severity Summary
         high_count = (df["severity"] == "high").sum()
         medium_count = (df["severity"] == "medium").sum()
 
@@ -37,21 +36,18 @@ if data:
         else:
             st.success("✅ System Stable")
 
-        # ✅ Clean severity labels
-        def highlight_severity(val):
+        def color_severity(val):
             if val == "high":
-                return "🔴 HIGH"
+                return "color: red; font-weight: bold"
             elif val == "medium":
-                return "🟠 MEDIUM"
+                return "color: orange"
             else:
-                return "🟢 LOW"
+                return "color: green"
 
-        df["severity_label"] = df["severity"].apply(highlight_severity)
+        styled_df = df.style.map(color_severity, subset=["severity"])
 
-        # ✅ Display table
-        st.dataframe(df)
+        st.dataframe(styled_df)
 
-        # 📊 Chart
         st.bar_chart(df["drift_score"])
 
     else:

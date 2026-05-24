@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from utils import fetch_data
 
 st.title("🔍 Drift Explanation")
@@ -6,12 +7,10 @@ st.title("🔍 Drift Explanation")
 data = fetch_data("explain")
 
 if data:
-    feature = st.selectbox("Select Feature", list(data.keys()))
-    info = data[feature]
 
-    st.json(info)
+    df = pd.DataFrame.from_dict(data, orient="index")
 
-    if "segment_shift" in info:
-        st.bar_chart(info["segment_shift"])
+    st.dataframe(df)
+
 else:
-    st.warning("No explanation data")
+    st.warning("No explanations available")

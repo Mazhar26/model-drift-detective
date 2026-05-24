@@ -1,17 +1,24 @@
-import streamlit as st
 from utils import fetch_data
+import streamlit as st
 
-st.title("📌 System Overview")
+st.title("🧠 Model Drift Detective")
 
-summary = fetch_data("summary")
+data = fetch_data("summary")
 
-if summary:
-    col1, col2, col3 = st.columns(3)
 
-    col1.metric("Drifted Features", summary.get("drifted_features_count", 0))
-    col2.metric("Top Feature", summary.get("top_drift_feature", "N/A"))
-    col3.metric("Accuracy Drop", round(summary.get("accuracy_drop", 0), 3))
+st.metric("Total Features", data["total_features"])
+st.metric("Drifted Features", data["drifted_features_count"])
+st.metric("Accuracy Drop", round(data["accuracy_drop"], 4))
 
-    st.success(f"Status: {summary.get('status', 'Unknown')}")
+st.subheader("System Status")
+
+status = data["status"]
+
+if status == "High Impact Drift":
+    st.error(status)
+elif status == "Moderate Drift":
+    st.warning(status)
 else:
-    st.warning("No data available")
+    st.success(status)
+
+st.write("Top Drift Feature:", data["top_drift_feature"])

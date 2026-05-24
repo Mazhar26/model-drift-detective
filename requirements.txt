@@ -1,11 +1,15 @@
 fastapi>=0.115.0
 uvicorn>=0.34.0
-streamlit>=1.45.0
+gunicorn>=23.0.0
+
+streamlit==1.45.1
+
 pandas>=2.2.0
 scikit-learn>=1.6.0
 scipy>=1.14.0
-requests>=2.32.0
 numpy>=2.1.0
+
+requests>=2.32.0
 python-dotenv>=1.0.0
 
 # ── Dev Tools ──

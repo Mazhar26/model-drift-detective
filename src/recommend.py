@@ -5,49 +5,109 @@ logger = get_logger(__name__)
 
 def recommend_actions(drift_results, impact):
     """
-    Generate smart action recommendations based on drift severity and impact.
+    Generate smart recommendations based on:
+    - drift severity
+    - drift score
+    - model accuracy degradation
 
     Args:
-        drift_results: Dict of drift detection results per feature.
-        impact: Dict with accuracy impact metrics.
+        drift_results:
+            Drift detection output.
+
+        impact:
+            Impact analysis output.
 
     Returns:
-        Dict mapping feature names to recommended actions.
+        Dictionary of recommendations.
     """
-    logger.info("Generating recommendations")
+
+    logger.info("Starting recommendation analysis")
+
     recommendations = {}
 
-    # Safe access
-    accuracy_drop = impact.get("accuracy_drop", 0)
+    try:
 
-    for feature, result in drift_results.items():
+        if not drift_results:
+            logger.warning("No drift results provided")
+            return {}
 
-        if not result.get("drift_detected", False):
-            continue
+        accuracy_drop = impact.get(
+            "accuracy_drop",
+            0
+        )
 
-        severity = result.get("severity", "low")
+        for feature, result in drift_results.items():
 
-        # Smarter decision logic
-        if accuracy_drop > 0.1 and severity == "high":
-            action = "🚨 Immediate retraining required"
-            logger.warning(
-                "CRITICAL: %s requires immediate retraining (drop=%.4f)",
-                feature, accuracy_drop
+            if not result.get("drift_detected", False):
+                continue
+
+            drift_score = result.get(
+                "drift_score",
+                0
             )
 
-        elif severity == "high":
-            action = "⚠️ High drift — retrain soon"
-            logger.warning("HIGH: %s needs retraining soon", feature)
+            severity = result.get(
+                "severity",
+                "low"
+            )
 
-        elif severity == "medium":
-            action = "👀 Monitor closely"
-            logger.info("MEDIUM: %s should be monitored", feature)
+            # ============================================
+            # Recommendation Logic
+            # ============================================
 
-        else:
-            action = "Low priority drift"
-            logger.debug("LOW: %s — low priority", feature)
+            if severity == "high":
 
-        recommendations[feature] = action
+                if accuracy_drop > 0.10:
 
-    logger.info("Recommendations generated — %d actions", len(recommendations))
-    return recommendations
+                    action = (
+                        "🚨 Critical drift detected. "
+                        "Immediate model retraining recommended."
+                    )
+
+                else:
+
+                    action = (
+                        "⚠️ High feature drift detected. "
+                        "Monitor closely and prepare retraining."
+                    )
+
+            elif severity == "medium":
+
+                action = (
+                    "👀 Moderate drift detected. "
+                    "Increase monitoring frequency."
+                )
+
+            else:
+
+                action = (
+                    "✅ Minor drift detected. "
+                    "No immediate action required."
+                )
+
+            recommendations[feature] = {
+                "severity": severity,
+                "drift_score": drift_score,
+                "recommendation": action
+            }
+
+            logger.info(
+                "Recommendation generated for %s",
+                feature
+            )
+
+        logger.info(
+            "Recommendation analysis completed — %d recommendations",
+            len(recommendations)
+        )
+
+        return recommendations
+
+    except Exception as e:
+
+        logger.error(
+            "Recommendation engine failed: %s",
+            e
+        )
+
+        return {}

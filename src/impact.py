@@ -1,5 +1,7 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
 from config import MODEL_PARAMS
 from logger import get_logger
 
@@ -8,48 +10,132 @@ logger = get_logger(__name__)
 
 def analyze_impact(train_df, live_df):
     """
-    Analyze accuracy impact of drift by comparing train vs live performance.
+    Analyze model performance degradation caused by drift.
+
+    Workflow:
+    - Train model on historical data
+    - Evaluate on unseen validation data
+    - Evaluate on live/drifted data
+    - Compare accuracy drop
 
     Args:
-        train_df: Training data DataFrame.
-        live_df: Live/production data DataFrame.
+        train_df:
+            Historical training dataset
+
+        live_df:
+            Live/production dataset
 
     Returns:
-        Dict with train_accuracy, live_accuracy, and accuracy_drop.
+        Dictionary containing:
+        - validation accuracy
+        - live accuracy
+        - accuracy drop
     """
+
     logger.info("Starting impact analysis")
 
-    # Split features & target
-    target_col = "Churn"
-    X_train = train_df.drop(columns=[target_col])
-    y_train = train_df[target_col]
+    try:
 
-    X_live = live_df.drop(columns=[target_col])
-    y_live = live_df[target_col]
+        # ============================================
+        # Validate datasets
+        # ============================================
 
-    # Train model with configurable parameters
-    model = RandomForestClassifier(**MODEL_PARAMS)
-    model.fit(X_train, y_train)
-    logger.debug("Model trained with params: %s", MODEL_PARAMS)
+        if train_df.empty or live_df.empty:
+            logger.warning("Empty dataset provided")
+            return {}
 
-    # Evaluate
-    train_pred = model.predict(X_train)
-    live_pred = model.predict(X_live)
+        if "Churn" not in train_df.columns:
+            logger.error("Target column 'Churn' missing")
+            return {}
 
-    train_acc = accuracy_score(y_train, train_pred)
-    live_acc = accuracy_score(y_live, live_pred)
-    drop = float(train_acc - live_acc)
+        # ============================================
+        # Split historical data
+        # ============================================
 
-    logger.info(
-        "Impact analysis complete — train=%.4f, live=%.4f, drop=%.4f",
-        train_acc, live_acc, drop
-    )
+        X = train_df.drop(columns=["Churn"])
+        y = train_df["Churn"]
 
-    if drop > 0.1:
-        logger.warning("Significant accuracy drop detected: %.4f", drop)
+        X_train, X_val, y_train, y_val = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42
+        )
 
-    return {
-        "train_accuracy": float(train_acc),
-        "live_accuracy": float(live_acc),
-        "accuracy_drop": drop
-    }
+        # ============================================
+        # Prepare live data
+        # ============================================
+
+        X_live = live_df.drop(columns=["Churn"])
+        y_live = live_df["Churn"]
+
+        # ============================================
+        # Train model
+        # ============================================
+
+        model = RandomForestClassifier(
+            **MODEL_PARAMS
+        )
+
+        model.fit(X_train, y_train)
+
+        logger.info("RandomForest model trained")
+
+        # ============================================
+        # Validation accuracy
+        # ============================================
+
+        val_pred = model.predict(X_val)
+
+        validation_accuracy = accuracy_score(
+            y_val,
+            val_pred
+        )
+
+        # ============================================
+        # Live accuracy
+        # ============================================
+
+        live_pred = model.predict(X_live)
+
+        live_accuracy = accuracy_score(
+            y_live,
+            live_pred
+        )
+
+        # ============================================
+        # Accuracy degradation
+        # ============================================
+
+        accuracy_drop = (
+            validation_accuracy
+            - live_accuracy
+        )
+
+        logger.info(
+            "Impact analysis completed — validation=%.4f live=%.4f drop=%.4f",
+            validation_accuracy,
+            live_accuracy,
+            accuracy_drop
+        )
+
+        return {
+            "validation_accuracy": float(
+                validation_accuracy
+            ),
+            "live_accuracy": float(
+                live_accuracy
+            ),
+            "accuracy_drop": float(
+                accuracy_drop
+            )
+        }
+
+    except Exception as e:
+
+        logger.error(
+            "Impact analysis failed: %s",
+            e
+        )
+
+        return {}
