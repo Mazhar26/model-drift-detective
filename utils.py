@@ -1,8 +1,11 @@
 import requests
 from config import API_HOST, API_PORT
 
-# Centralized versioned API base URL
-BASE_URL = f"http://{API_HOST}:{API_PORT}/api/v1"
+# Automatically use HTTPS for Render deployments
+if "onrender.com" in API_HOST:
+    BASE_URL = f"https://{API_HOST}/api/v1"
+else:
+    BASE_URL = f"http://{API_HOST}:{API_PORT}/api/v1"
 
 
 def fetch_data(endpoint, params=None):
