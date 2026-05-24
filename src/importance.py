@@ -7,6 +7,7 @@ logger = get_logger(__name__)
 
 
 def get_feature_importance(train_df, live_df):
+    # Public alias kept below for backward compatibility
     """
     Compare feature importance between
     train and live datasets.
@@ -123,3 +124,7 @@ def get_feature_importance(train_df, live_df):
         )
 
         return {}
+
+
+# Alias — smoke_test.py and api/main.py import by this name
+feature_importance_analysis = get_feature_importance

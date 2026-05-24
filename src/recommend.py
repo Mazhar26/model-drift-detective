@@ -41,11 +41,6 @@ def recommend_actions(drift_results, impact):
             if not result.get("drift_detected", False):
                 continue
 
-            drift_score = result.get(
-                "drift_score",
-                0
-            )
-
             severity = result.get(
                 "severity",
                 "low"
@@ -85,11 +80,7 @@ def recommend_actions(drift_results, impact):
                     "No immediate action required."
                 )
 
-            recommendations[feature] = {
-                "severity": severity,
-                "drift_score": drift_score,
-                "recommendation": action
-            }
+            recommendations[feature] = action
 
             logger.info(
                 "Recommendation generated for %s",

@@ -51,8 +51,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 #### Testing
 - Smoke test suite with 18 assertions (`smoke_test.py`)
-- pytest unit test suite with 19 tests across 4 modules
-- Test coverage: drift detection, recommendations, impact analysis, configuration
+- pytest unit test suite with **28 tests** across 6 modules:
+  `test_drift`, `test_recommend`, `test_impact`, `test_config`, `test_alerts`, `test_history`
+- Test coverage: drift detection, recommendations, impact analysis, configuration, alerts, history
 
 #### Documentation
 - README with badges (CI, Python, MIT, FastAPI, Streamlit, scikit-learn)
@@ -64,3 +65,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 #### Legal
 - MIT License
+
+---
+
+## [1.0.1] - 2026-05-24
+
+### Fixed
+
+- **`src/importance.py`** — Added `feature_importance_analysis` as a public alias for `get_feature_importance`.
+  `smoke_test.py` and `api/main.py` imported the alias name, causing an `ImportError`.
+- **`src/impact.py`** — Added `train_accuracy` as an alias key alongside `validation_accuracy` in the
+  return dict. Tests and smoke test expected `train_accuracy`; both keys now coexist for full compatibility.
+- **`src/recommend.py`** — Changed recommendation return value from nested dict (`{severity, drift_score,
+  recommendation}`) to a flat action string. This matches the FastAPI `RecommendResponse(Dict[str, str])`
+  Pydantic model and all test assertions.
+
+### Updated
+
+- **`README.md`** — Corrected pytest test count from 19 to 28, listed all 6 test modules, and added
+  full pytest expected output block to the Testing section.

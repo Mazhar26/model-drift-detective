@@ -1,5 +1,5 @@
 from scipy.stats import ks_2samp
-import numpy as np
+
 
 from config import (
     SEVERITY_HIGH_THRESHOLD,

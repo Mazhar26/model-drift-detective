@@ -27,7 +27,7 @@ def analyze_impact(train_df, live_df):
 
     Returns:
         Dictionary containing:
-        - validation accuracy
+        - train_accuracy (alias: validation_accuracy)
         - live accuracy
         - accuracy drop
     """
@@ -120,6 +120,9 @@ def analyze_impact(train_df, live_df):
         )
 
         return {
+            "train_accuracy": float(
+                validation_accuracy
+            ),
             "validation_accuracy": float(
                 validation_accuracy
             ),

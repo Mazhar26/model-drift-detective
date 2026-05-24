@@ -152,11 +152,13 @@ model-drift-mvp/
 │   ├── timeline.py           # Drift simulation over time
 │   ├── history.py            # SQLite drift history persistence
 │   └── alerts.py             # Email alert system
-├── tests/                    # pytest unit tests (19 tests)
+├── tests/                    # pytest unit tests (28 tests)
 │   ├── test_drift.py
 │   ├── test_recommend.py
 │   ├── test_impact.py
-│   └── test_config.py
+│   ├── test_config.py
+│   ├── test_alerts.py
+│   └── test_history.py
 ├── pages/                    # Streamlit sidebar pages
 │   ├── 1_Overview.py
 │   ├── 2_Drift.py
@@ -309,6 +311,26 @@ Expected output:
 ========================================
 Results: 18 passed, 0 failed
 ========================================
+```
+
+Run the full unit test suite with pytest:
+
+```bash
+python -m pytest tests/ -v
+```
+
+Expected output:
+```
+collected 28 items
+
+tests/test_alerts.py    ....    [ 14%]
+tests/test_config.py    ...     [ 25%]
+tests/test_drift.py     ........[ 53%]
+tests/test_history.py   .....   [ 71%]
+tests/test_impact.py    ....    [ 85%]
+tests/test_recommend.py ....    [100%]
+
+28 passed in ~8s
 ```
 
 ---
