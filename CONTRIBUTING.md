@@ -106,10 +106,10 @@ curl http://127.0.0.1:8000/summary
 ## 💡 Ideas for Contributions
 
 - [ ] Add more drift detection methods (PSI, Chi-squared, Jensen-Shannon)
-- [ ] Add database persistence for drift history
-- [ ] Add email/Slack alerts for high-severity drift
-- [ ] Dockerize the application
-- [ ] Add unit tests with pytest
+- [x] Add database persistence for drift history (Implemented with SQLite)
+- [x] Add email alerts for high-severity drift (Implemented with SMTP alerts)
+- [x] Dockerize the application (Implemented with multi-container docker-compose)
+- [x] Add unit tests with pytest (Implemented with 36 unit tests)
 - [ ] Support for custom datasets (CSV upload)
 - [ ] Add authentication to the API
 
