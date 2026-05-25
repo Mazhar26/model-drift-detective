@@ -1,5 +1,8 @@
 import requests
 from config import API_HOST, API_PORT
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 # Automatically use HTTPS for Render deployments
 if "onrender.com" in API_HOST:
@@ -40,21 +43,21 @@ def fetch_data(endpoint, params=None):
         return response.json()
 
     except requests.exceptions.ConnectionError:
-        print(f"❌ Connection failed to backend: {url}")
+        logger.error("Connection failed to backend: %s", url)
         return {}
 
     except requests.exceptions.Timeout:
-        print(f"⏳ Request timeout: {url}")
+        logger.warning("Request timeout: %s", url)
         return {}
 
     except requests.exceptions.HTTPError as e:
-        print(f"⚠️ HTTP error: {e}")
+        logger.warning("HTTP error: %s", e)
         return {}
 
     except requests.exceptions.JSONDecodeError:
-        print(f"⚠️ Invalid JSON response from: {url}")
+        logger.warning("Invalid JSON response from: %s", url)
         return {}
 
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        logger.error("Unexpected error: %s", e)
         return {}

@@ -55,12 +55,7 @@ def analyze_impact(train_df, live_df):
         X = train_df.drop(columns=["Churn"])
         y = train_df["Churn"]
 
-        X_train, X_val, y_train, y_val = train_test_split(
-            X,
-            y,
-            test_size=0.2,
-            random_state=42
-        )
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
         # ============================================
         # Prepare live data
@@ -73,9 +68,7 @@ def analyze_impact(train_df, live_df):
         # Train model
         # ============================================
 
-        model = RandomForestClassifier(
-            **MODEL_PARAMS
-        )
+        model = RandomForestClassifier(**MODEL_PARAMS)
 
         model.fit(X_train, y_train)
 
@@ -87,10 +80,7 @@ def analyze_impact(train_df, live_df):
 
         val_pred = model.predict(X_val)
 
-        validation_accuracy = accuracy_score(
-            y_val,
-            val_pred
-        )
+        validation_accuracy = accuracy_score(y_val, val_pred)
 
         # ============================================
         # Live accuracy
@@ -98,47 +88,30 @@ def analyze_impact(train_df, live_df):
 
         live_pred = model.predict(X_live)
 
-        live_accuracy = accuracy_score(
-            y_live,
-            live_pred
-        )
+        live_accuracy = accuracy_score(y_live, live_pred)
 
         # ============================================
         # Accuracy degradation
         # ============================================
 
-        accuracy_drop = (
-            validation_accuracy
-            - live_accuracy
-        )
+        accuracy_drop = validation_accuracy - live_accuracy
 
         logger.info(
             "Impact analysis completed — validation=%.4f live=%.4f drop=%.4f",
             validation_accuracy,
             live_accuracy,
-            accuracy_drop
+            accuracy_drop,
         )
 
         return {
-            "train_accuracy": float(
-                validation_accuracy
-            ),
-            "validation_accuracy": float(
-                validation_accuracy
-            ),
-            "live_accuracy": float(
-                live_accuracy
-            ),
-            "accuracy_drop": float(
-                accuracy_drop
-            )
+            "train_accuracy": float(validation_accuracy),
+            "validation_accuracy": float(validation_accuracy),
+            "live_accuracy": float(live_accuracy),
+            "accuracy_drop": float(accuracy_drop),
         }
 
     except Exception as e:
 
-        logger.error(
-            "Impact analysis failed: %s",
-            e
-        )
+        logger.error("Impact analysis failed: %s", e)
 
         return {}

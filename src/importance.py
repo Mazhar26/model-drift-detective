@@ -54,17 +54,13 @@ def get_feature_importance(train_df, live_df):
         # Train model on training data
         # ============================================
 
-        model = RandomForestClassifier(
-            **MODEL_PARAMS
-        )
+        model = RandomForestClassifier(**MODEL_PARAMS)
 
         model.fit(X_train, y_train)
 
         train_importance = model.feature_importances_
 
-        logger.info(
-            "Training importance calculated"
-        )
+        logger.info("Training importance calculated")
 
         # ============================================
         # Train model on live data
@@ -74,9 +70,7 @@ def get_feature_importance(train_df, live_df):
 
         live_importance = model.feature_importances_
 
-        logger.info(
-            "Live importance calculated"
-        )
+        logger.info("Live importance calculated")
 
         # ============================================
         # Compare importance shifts
@@ -86,42 +80,25 @@ def get_feature_importance(train_df, live_df):
 
         for i, col in enumerate(X_train.columns):
 
-            diff = (
-                live_importance[i]
-                - train_importance[i]
-            )
+            diff = live_importance[i] - train_importance[i]
 
             result[col] = {
-                "train_importance": float(
-                    train_importance[i]
-                ),
-                "live_importance": float(
-                    live_importance[i]
-                ),
-                "change": float(diff)
+                "train_importance": float(train_importance[i]),
+                "live_importance": float(live_importance[i]),
+                "change": float(diff),
             }
 
             if abs(diff) > 0.05:
 
-                logger.warning(
-                    "Significant importance shift in %s: %.4f",
-                    col,
-                    diff
-                )
+                logger.warning("Significant importance shift in %s: %.4f", col, diff)
 
-        logger.info(
-            "Feature importance analysis completed — %d features analyzed",
-            len(result)
-        )
+        logger.info("Feature importance analysis completed — %d features analyzed", len(result))
 
         return result
 
     except Exception as e:
 
-        logger.error(
-            "Feature importance analysis failed: %s",
-            e
-        )
+        logger.error("Feature importance analysis failed: %s", e)
 
         return {}
 

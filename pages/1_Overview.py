@@ -5,20 +5,22 @@ st.title("🧠 Model Drift Detective")
 
 data = fetch_data("summary")
 
-
-st.metric("Total Features", data["total_features"])
-st.metric("Drifted Features", data["drifted_features_count"])
-st.metric("Accuracy Drop", round(data["accuracy_drop"], 4))
-
-st.subheader("System Status")
-
-status = data["status"]
-
-if status == "High Impact Drift":
-    st.error(status)
-elif status == "Moderate Drift":
-    st.warning(status)
+if not data:
+    st.error("🔌 Could not reach API — is the backend running?")
 else:
-    st.success(status)
+    st.metric("Total Features", data.get("total_features", 0))
+    st.metric("Drifted Features", data.get("drifted_features_count", 0))
+    st.metric("Accuracy Drop", round(data.get("accuracy_drop", 0.0), 4))
 
-st.write("Top Drift Feature:", data["top_drift_feature"])
+    st.subheader("System Status")
+
+    status = data.get("status", "Unknown")
+
+    if status == "High Impact Drift":
+        st.error(status)
+    elif status == "Moderate Drift":
+        st.warning(status)
+    else:
+        st.success(status)
+
+    st.write("Top Drift Feature:", data.get("top_drift_feature"))

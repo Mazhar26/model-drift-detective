@@ -1,18 +1,19 @@
-from fastapi import FastAPI, HTTPException, Query, APIRouter
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, RootModel
-from typing import Any, Dict, List, Optional
+
+from logger import get_logger
+from src.alerts import check_and_alert
 from src.data_setup import load_data
 from src.drift import detect_drift
 from src.explain import explain_drift
-from src.recommend import recommend_actions
+from src.history import get_drift_history, get_drift_trend, save_drift_result
 from src.impact import analyze_impact
-from src.timeline import simulate_drift_over_time
 from src.importance import get_feature_importance
-from src.history import save_drift_result, get_drift_history, get_drift_trend
-from src.alerts import check_and_alert
-
-from logger import get_logger
+from src.recommend import recommend_actions
+from src.timeline import simulate_drift_over_time
 
 logger = get_logger(__name__)
 
@@ -21,14 +22,17 @@ logger = get_logger(__name__)
 # Pydantic Response Models
 # ══════════════════════════════════════════════════
 
+
 class ErrorResponse(BaseModel):
     """Standard error response format."""
+
     error: str = Field(..., description="Error description")
     code: int = Field(..., description="HTTP status code")
 
 
 class DriftFeatureResult(BaseModel):
     """Drift detection result for a single feature."""
+
     p_value: float = Field(..., description="KS-test p-value")
     drift_detected: bool = Field(..., description="Whether drift was detected")
     drift_score: float = Field(..., description="KS-test statistic (drift magnitude)")
@@ -41,6 +45,7 @@ class DriftResponse(RootModel[Dict[str, DriftFeatureResult]]):
 
 class ExplainFeatureResult(BaseModel):
     """Explanation result for a single feature."""
+
     severity: str = Field(..., description="Drift severity classification")
     p_value: float = Field(..., description="KS-test p-value")
     mean_shift: float = Field(..., description="Difference in means between train and live")
@@ -53,6 +58,7 @@ class ExplainResponse(RootModel[Dict[str, ExplainFeatureResult]]):
 
 class ImpactResponse(BaseModel):
     """Response model for accuracy impact analysis."""
+
     validation_accuracy: float = Field(..., description="Model accuracy on training data")
     live_accuracy: float = Field(..., description="Model accuracy on live/drifted data")
     accuracy_drop: float = Field(..., description="Accuracy degradation (train - live)")
@@ -64,6 +70,7 @@ class RecommendResponse(RootModel[Dict[str, str]]):
 
 class ImportanceFeatureResult(BaseModel):
     """Feature importance result for a single feature."""
+
     train_importance: float = Field(..., description="Feature importance on training data")
     live_importance: float = Field(..., description="Feature importance on live data")
     change: float = Field(..., description="Change in importance (live - train)")
@@ -75,6 +82,7 @@ class ImportanceResponse(RootModel[Dict[str, ImportanceFeatureResult]]):
 
 class TimelineEntry(BaseModel):
     """Single entry in drift timeline."""
+
     step: int = Field(..., description="Simulation step number")
     feature: str = Field(..., description="Top drifted feature at this step")
     drift_score: float = Field(..., description="Maximum drift score at this step")
@@ -86,6 +94,7 @@ class TimelineResponse(RootModel[List[TimelineEntry]]):
 
 class SummaryResponse(BaseModel):
     """Response model for system summary."""
+
     total_features: int = Field(..., description="Total number of analyzed features")
     drifted_features_count: int = Field(..., description="Number of features with detected drift")
     top_drift_feature: Optional[str] = Field(None, description="Feature with highest drift score")
@@ -95,6 +104,7 @@ class SummaryResponse(BaseModel):
 
 class HistoryEntry(BaseModel):
     """Single drift history record."""
+
     id: int = Field(..., description="Record ID")
     timestamp: str = Field(..., description="ISO timestamp of drift check")
     features_drifted: int = Field(..., description="Number of drifted features")
@@ -105,6 +115,7 @@ class HistoryEntry(BaseModel):
 
 class DriftTrendEntry(BaseModel):
     """Daily drift trend record."""
+
     date: str = Field(..., description="Date (YYYY-MM-DD)")
     avg_drift_score: float = Field(..., description="Average drift score for the day")
     avg_accuracy_drop: float = Field(..., description="Average accuracy drop for the day")
@@ -113,6 +124,7 @@ class DriftTrendEntry(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response model for health check."""
+
     message: str = Field(..., description="API status message")
 
 
@@ -176,26 +188,25 @@ def get_importance():
 # Global Exception Handler
 # ══════════════════════════════════════════════════
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """Catch-all handler for unhandled exceptions."""
     logger.error("Unhandled exception on %s: %s", request.url.path, exc)
-    return JSONResponse(
-        status_code=500,
-        content={"error": "Internal server error", "code": 500}
-    )
+    return JSONResponse(status_code=500, content={"error": "Internal server error", "code": 500})
 
 
 # ══════════════════════════════════════════════════
 # Health Check — No version prefix
 # ══════════════════════════════════════════════════
 
+
 @app.get(
     "/",
     response_model=HealthResponse,
     summary="Health Check",
     description="Verify that the API is running and responsive.",
-    tags=["System"]
+    tags=["System"],
 )
 def home():
     """Health check endpoint — returns API status."""
@@ -205,6 +216,7 @@ def home():
 # ══════════════════════════════════════════════════
 # Versioned API Endpoints — /api/v1/*
 # ══════════════════════════════════════════════════
+
 
 @router.get(
     "/detect",
@@ -217,15 +229,15 @@ def home():
     responses={
         200: {"description": "Drift detection results"},
         400: {"model": ErrorResponse, "description": "Invalid threshold value"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def detect(
     threshold: float = Query(
         default=0.3,
         ge=0.0,
         le=1.0,
-        description="Minimum drift score to include in results (0.0 to 1.0)"
+        description="Minimum drift score to include in results (0.0 to 1.0)",
     )
 ):
     """
@@ -238,8 +250,7 @@ def detect(
         if threshold < 0 or threshold > 1:
             logger.warning("Invalid threshold: %s", threshold)
             raise HTTPException(
-                status_code=400,
-                detail={"error": "Threshold must be between 0 and 1", "code": 400}
+                status_code=400, detail={"error": "Threshold must be between 0 and 1", "code": 400}
             )
 
         results = get_drift()
@@ -259,10 +270,9 @@ def detect(
         # Save to drift history
         try:
             impact_data = get_impact()
-            save_drift_result({
-                "drift_results": results,
-                "accuracy_drop": impact_data.get("accuracy_drop", 0.0)
-            })
+            save_drift_result(
+                {"drift_results": results, "accuracy_drop": impact_data.get("accuracy_drop", 0.0)}
+            )
         except Exception as save_err:
             logger.error("Failed to save drift history: %s", save_err)
 
@@ -283,8 +293,7 @@ def detect(
     except Exception as e:
         logger.error("/api/v1/detect failed: %s", e, exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail={"error": f"Drift detection failed: {str(e)}", "code": 500}
+            status_code=500, detail={"error": f"Drift detection failed: {str(e)}", "code": 500}
         )
 
 
@@ -298,8 +307,8 @@ def detect(
     tags=["Drift Analysis"],
     responses={
         200: {"description": "Drift explanations for all drifted features"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def explain():
     """
@@ -319,7 +328,7 @@ def explain():
                     "severity": "high" if result["drift_score"] > 0.8 else "medium",
                     "p_value": result["p_value"],
                     "mean_shift": explanations.get(feature, {}).get("difference", 0),
-                    "segment_shift": explanations.get(feature, {}).get("segment_shift", {})
+                    "segment_shift": explanations.get(feature, {}).get("segment_shift", {}),
                 }
 
         logger.info("Explain endpoint: %d features explained", len(final_output))
@@ -328,8 +337,7 @@ def explain():
     except Exception as e:
         logger.error("/api/v1/explain failed: %s", e, exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail={"error": f"Drift explanation failed: {str(e)}", "code": 500}
+            status_code=500, detail={"error": f"Drift explanation failed: {str(e)}", "code": 500}
         )
 
 
@@ -343,8 +351,8 @@ def explain():
     tags=["Drift Analysis"],
     responses={
         200: {"description": "Recommended actions per feature"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def recommend():
     """
@@ -363,7 +371,7 @@ def recommend():
         logger.error("/api/v1/recommend failed: %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail={"error": f"Recommendation generation failed: {str(e)}", "code": 500}
+            detail={"error": f"Recommendation generation failed: {str(e)}", "code": 500},
         )
 
 
@@ -378,8 +386,8 @@ def recommend():
     tags=["Drift Analysis"],
     responses={
         200: {"description": "Accuracy impact metrics"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def impact():
     """
@@ -395,8 +403,7 @@ def impact():
     except Exception as e:
         logger.error("/api/v1/impact failed: %s", e, exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail={"error": f"Impact analysis failed: {str(e)}", "code": 500}
+            status_code=500, detail={"error": f"Impact analysis failed: {str(e)}", "code": 500}
         )
 
 
@@ -410,8 +417,8 @@ def impact():
     tags=["Simulation"],
     responses={
         200: {"description": "List of drift timeline entries"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def timeline():
     """
@@ -427,8 +434,7 @@ def timeline():
     except Exception as e:
         logger.error("/api/v1/timeline failed: %s", e, exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail={"error": f"Timeline simulation failed: {str(e)}", "code": 500}
+            status_code=500, detail={"error": f"Timeline simulation failed: {str(e)}", "code": 500}
         )
 
 
@@ -442,8 +448,8 @@ def timeline():
     tags=["Drift Analysis"],
     responses={
         200: {"description": "Feature importance comparison"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def importance():
     """
@@ -460,7 +466,7 @@ def importance():
         logger.error("/api/v1/importance failed: %s", e, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail={"error": f"Feature importance analysis failed: {str(e)}", "code": 500}
+            detail={"error": f"Feature importance analysis failed: {str(e)}", "code": 500},
         )
 
 
@@ -475,8 +481,8 @@ def importance():
     tags=["System"],
     responses={
         200: {"description": "System summary with drift status"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def summary():
     """
@@ -494,17 +500,12 @@ def summary():
                 "drifted_features_count": 0,
                 "top_drift_feature": None,
                 "accuracy_drop": 0,
-                "status": "No Data"
+                "status": "No Data",
             }
 
-        drifted_features = [
-            k for k, v in drift.items() if v["drift_detected"]
-        ]
+        drifted_features = [k for k, v in drift.items() if v["drift_detected"]]
 
-        top_feature = max(
-            drift.items(),
-            key=lambda x: x[1]["drift_score"]
-        )[0] if drift else None
+        top_feature = max(drift.items(), key=lambda x: x[1]["drift_score"])[0] if drift else None
 
         # Status logic
         if impact_data.get("accuracy_drop", 0) > 0.1:
@@ -521,14 +522,13 @@ def summary():
             "drifted_features_count": len(drifted_features),
             "top_drift_feature": top_feature,
             "accuracy_drop": impact_data.get("accuracy_drop", 0),
-            "status": status
+            "status": status,
         }
 
     except Exception as e:
         logger.error("/api/v1/summary failed: %s", e, exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail={"error": f"Summary generation failed: {str(e)}", "code": 500}
+            status_code=500, detail={"error": f"Summary generation failed: {str(e)}", "code": 500}
         )
 
 
@@ -537,14 +537,13 @@ def summary():
     response_model=List[HistoryEntry],
     summary="Drift History",
     description=(
-        "Retrieve the last 50 drift check results from the persistent "
-        "SQLite history database."
+        "Retrieve the last 50 drift check results from the persistent " "SQLite history database."
     ),
     tags=["History"],
     responses={
         200: {"description": "List of drift history records"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def history():
     """
@@ -561,8 +560,7 @@ def history():
     except Exception as e:
         logger.error("/api/v1/history failed: %s", e, exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail={"error": f"History retrieval failed: {str(e)}", "code": 500}
+            status_code=500, detail={"error": f"History retrieval failed: {str(e)}", "code": 500}
         )
 
 
@@ -574,8 +572,8 @@ def history():
     tags=["History"],
     responses={
         200: {"description": "Daily drift trend data"},
-        500: {"model": ErrorResponse, "description": "Internal server error"}
-    }
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
 )
 def history_trend():
     """
@@ -591,8 +589,7 @@ def history_trend():
     except Exception as e:
         logger.error("/api/v1/history/trend failed: %s", e, exc_info=True)
         raise HTTPException(
-            status_code=500,
-            detail={"error": f"Trend retrieval failed: {str(e)}", "code": 500}
+            status_code=500, detail={"error": f"Trend retrieval failed: {str(e)}", "code": 500}
         )
 
 

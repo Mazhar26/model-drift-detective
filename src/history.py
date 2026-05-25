@@ -5,9 +5,10 @@ Stores drift check results over time for trend analysis
 and historical tracking.
 """
 
-import sqlite3
 import os
+import sqlite3
 from datetime import datetime, timezone
+
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -22,17 +23,17 @@ def _get_connection():
     os.makedirs(DB_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS drift_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT NOT NULL,
-            features_drifted INTEGER NOT NULL,
-            avg_drift_score REAL NOT NULL,
-            accuracy_drop REAL NOT NULL,
-            severity TEXT NOT NULL
-        )
-    """)
-    conn.commit()
+    with conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS drift_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                features_drifted INTEGER NOT NULL,
+                avg_drift_score REAL NOT NULL,
+                accuracy_drop REAL NOT NULL,
+                severity TEXT NOT NULL
+            )
+        """)
     return conn
 
 
@@ -46,15 +47,13 @@ def save_drift_result(result):
                 - drift_results: Dict of feature→drift info
                 - accuracy_drop: float
     """
+    conn = None
     try:
         drift_results = result.get("drift_results", {})
         accuracy_drop = result.get("accuracy_drop", 0.0)
 
         # Count drifted features
-        drifted = [
-            f for f, r in drift_results.items()
-            if r.get("drift_detected", False)
-        ]
+        drifted = [f for f, r in drift_results.items() if r.get("drift_detected", False)]
         features_drifted = len(drifted)
 
         # Calculate average drift score
@@ -72,24 +71,28 @@ def save_drift_result(result):
         timestamp = datetime.now(timezone.utc).isoformat()
 
         conn = _get_connection()
-        conn.execute(
-            """
-            INSERT INTO drift_history
-                (timestamp, features_drifted, avg_drift_score, accuracy_drop, severity)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (timestamp, features_drifted, avg_score, accuracy_drop, severity)
-        )
-        conn.commit()
-        conn.close()
+        with conn:
+            conn.execute(
+                """
+                INSERT INTO drift_history
+                    (timestamp, features_drifted, avg_drift_score, accuracy_drop, severity)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (timestamp, features_drifted, avg_score, accuracy_drop, severity),
+            )
 
         logger.info(
             "Saved drift result: drifted=%d, avg_score=%.4f, severity=%s",
-            features_drifted, avg_score, severity
+            features_drifted,
+            avg_score,
+            severity,
         )
 
     except Exception as e:
         logger.error("Failed to save drift result: %s", e)
+    finally:
+        if conn:
+            conn.close()
 
 
 def get_drift_history(limit=50):
@@ -102,6 +105,7 @@ def get_drift_history(limit=50):
     Returns:
         List of dicts with drift history records.
     """
+    conn = None
     try:
         conn = _get_connection()
         cursor = conn.execute(
@@ -112,17 +116,18 @@ def get_drift_history(limit=50):
             ORDER BY id DESC
             LIMIT ?
             """,
-            (limit,)
+            (limit,),
         )
         rows = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-
         logger.info("Retrieved %d drift history records", len(rows))
         return rows
 
     except Exception as e:
         logger.error("Failed to retrieve drift history: %s", e)
         return []
+    finally:
+        if conn:
+            conn.close()
 
 
 def get_drift_trend():
@@ -132,10 +137,10 @@ def get_drift_trend():
     Returns:
         List of dicts with date and avg_drift_score.
     """
+    conn = None
     try:
         conn = _get_connection()
-        cursor = conn.execute(
-            """
+        cursor = conn.execute("""
             SELECT
                 DATE(timestamp) as date,
                 AVG(avg_drift_score) as avg_drift_score,
@@ -145,14 +150,14 @@ def get_drift_trend():
             GROUP BY DATE(timestamp)
             ORDER BY date DESC
             LIMIT 30
-            """
-        )
+            """)
         rows = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-
         logger.info("Retrieved %d daily trend records", len(rows))
         return rows
 
     except Exception as e:
         logger.error("Failed to retrieve drift trend: %s", e)
         return []
+    finally:
+        if conn:
+            conn.close()

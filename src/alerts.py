@@ -7,10 +7,12 @@ Controlled via environment variables (disabled by default).
 
 import os
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from dotenv import load_dotenv
+
 from logger import get_logger
 
 load_dotenv()
@@ -48,7 +50,9 @@ def send_drift_alert(feature_name, drift_score, severity, recommendation="Monito
     if drift_score < ALERT_THRESHOLD:
         logger.debug(
             "Drift score %.4f below alert threshold %.4f for %s — skipping",
-            drift_score, ALERT_THRESHOLD, feature_name
+            drift_score,
+            ALERT_THRESHOLD,
+            feature_name,
         )
         return False
 
@@ -56,7 +60,9 @@ def send_drift_alert(feature_name, drift_score, severity, recommendation="Monito
     if not ALERT_EMAIL_FROM or not ALERT_EMAIL_TO or not SMTP_PASSWORD:
         logger.warning(
             "Alert email config incomplete — FROM=%s, TO=%s, PASSWORD=%s",
-            bool(ALERT_EMAIL_FROM), bool(ALERT_EMAIL_TO), bool(SMTP_PASSWORD)
+            bool(ALERT_EMAIL_FROM),
+            bool(ALERT_EMAIL_TO),
+            bool(SMTP_PASSWORD),
         )
         return False
 
@@ -151,7 +157,10 @@ Configure alerts in your .env file.
 
         logger.info(
             "Alert sent for %s (score=%.4f, severity=%s) to %s",
-            feature_name, drift_score, severity, ALERT_EMAIL_TO
+            feature_name,
+            drift_score,
+            severity,
+            ALERT_EMAIL_TO,
         )
         return True
 

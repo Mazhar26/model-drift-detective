@@ -31,19 +31,13 @@ def preprocess_data(df):
     # Convert target column
     # -----------------------------------
 
-    df["Churn"] = df["Churn"].map({
-        "Yes": 1,
-        "No": 0
-    })
+    df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
 
     # -----------------------------------
     # Numeric conversion
     # -----------------------------------
 
-    df["TotalCharges"] = pd.to_numeric(
-        df["TotalCharges"],
-        errors="coerce"
-    )
+    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 
     # -----------------------------------
     # Remove missing values
@@ -52,10 +46,7 @@ def preprocess_data(df):
     missing_before = df.isna().sum().sum()
 
     if missing_before > 0:
-        logger.warning(
-            "Missing values detected: %d",
-            missing_before
-        )
+        logger.warning("Missing values detected: %d", missing_before)
 
     df = df.dropna()
 
@@ -63,15 +54,9 @@ def preprocess_data(df):
     # Encode categoricals
     # -----------------------------------
 
-    df = pd.get_dummies(
-        df,
-        drop_first=True
-    )
+    df = pd.get_dummies(df, drop_first=True)
 
-    logger.info(
-        "Preprocessing completed — shape=%s",
-        df.shape
-    )
+    logger.info("Preprocessing completed — shape=%s", df.shape)
 
     return df
 
@@ -127,14 +112,9 @@ def load_data():
     # Read CSV
     # -----------------------------------
 
-    df = pd.read_csv(
-        "data/WA_Fn-UseC_-Telco-Customer-Churn.csv"
-    )
+    df = pd.read_csv("data/WA_Fn-UseC_-Telco-Customer-Churn.csv")
 
-    logger.info(
-        "Dataset loaded — shape=%s",
-        df.shape
-    )
+    logger.info("Dataset loaded — shape=%s", df.shape)
 
     # -----------------------------------
     # Preprocess
@@ -146,17 +126,9 @@ def load_data():
     # Train/live split
     # -----------------------------------
 
-    train_df, live_df = train_test_split(
-        df,
-        test_size=0.3,
-        random_state=42
-    )
+    train_df, live_df = train_test_split(df, test_size=0.3, random_state=42)
 
-    logger.info(
-        "Dataset split — train=%s live=%s",
-        train_df.shape,
-        live_df.shape
-    )
+    logger.info("Dataset split — train=%s live=%s", train_df.shape, live_df.shape)
 
     # -----------------------------------
     # Inject synthetic drift

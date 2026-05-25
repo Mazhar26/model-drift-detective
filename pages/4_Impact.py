@@ -5,17 +5,20 @@ st.title("📉 Drift Impact")
 
 data = fetch_data("impact")
 
-st.metric(
-    "Validation Accuracy",
-    round(data["validation_accuracy"], 4)
-)
+if not data:
+    st.error("🔌 Could not reach API — is the backend running?")
+else:
+    st.metric(
+        "Validation Accuracy",
+        round(data.get("validation_accuracy", 0.0), 4)
+    )
 
-st.metric(
-    "Live Accuracy",
-    round(data["live_accuracy"], 4)
-)
+    st.metric(
+        "Live Accuracy",
+        round(data.get("live_accuracy", 0.0), 4)
+    )
 
-st.metric(
-    "Accuracy Drop",
-    round(data["accuracy_drop"], 4)
-)
+    st.metric(
+        "Accuracy Drop",
+        round(data.get("accuracy_drop", 0.0), 4)
+    )

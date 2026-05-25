@@ -1,4 +1,5 @@
 import numpy as np
+
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -53,9 +54,7 @@ def explain_drift(train_df, live_df):
     explanation = {}
 
     # Align columns safely
-    common_cols = list(
-        set(train_df.columns).intersection(set(live_df.columns))
-    )
+    common_cols = list(set(train_df.columns).intersection(set(live_df.columns)))
 
     for col in common_cols:
 
@@ -83,29 +82,14 @@ def explain_drift(train_df, live_df):
                 "train_mean": train_mean,
                 "live_mean": live_mean,
                 "difference": diff,
-                "segment_shift": segment_analysis(
-                    train_df,
-                    live_df,
-                    col
-                )
+                "segment_shift": segment_analysis(train_df, live_df, col),
             }
 
-            logger.debug(
-                "Explained %s: shift=%.4f",
-                col,
-                diff
-            )
+            logger.debug("Explained %s: shift=%.4f", col, diff)
 
         except Exception as e:
-            logger.error(
-                "Failed to explain column %s: %s",
-                col,
-                e
-            )
+            logger.error("Failed to explain column %s: %s", col, e)
 
-    logger.info(
-        "Drift explanation completed — %d features explained",
-        len(explanation)
-    )
+    logger.info("Drift explanation completed — %d features explained", len(explanation))
 
     return explanation

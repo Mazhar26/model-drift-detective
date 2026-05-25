@@ -6,8 +6,13 @@ st.title("⭐ Feature Importance Shift")
 
 data = fetch_data("importance")
 
-df = pd.DataFrame.from_dict(data, orient="index")
+if not data:
+    st.error("🔌 Could not reach API — is the backend running?")
+else:
+    df = pd.DataFrame.from_dict(data, orient="index")
 
-st.dataframe(df)
-
-st.bar_chart(df["change"])
+    if not df.empty and "change" in df.columns:
+        st.dataframe(df)
+        st.bar_chart(df["change"])
+    else:
+        st.info("No feature importance shift data available.")

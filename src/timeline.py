@@ -1,7 +1,8 @@
 import numpy as np
+
+from logger import get_logger
 from src.data_setup import load_data
 from src.drift import detect_drift
-from logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -23,10 +24,7 @@ def simulate_drift_over_time(steps=10):
             and drift score per step.
     """
 
-    logger.info(
-        "Starting drift timeline simulation with %d steps",
-        steps
-    )
+    logger.info("Starting drift timeline simulation with %d steps", steps)
 
     timeline = []
 
@@ -41,29 +39,17 @@ def simulate_drift_over_time(steps=10):
         # -----------------------------------
         # Simulate MonthlyCharges drift
         # -----------------------------------
-        live['MonthlyCharges'] = (
-            live['MonthlyCharges']
-            + np.random.normal(
-                loc=step * 5,
-                scale=10,
-                size=len(live)
-            )
+        live["MonthlyCharges"] = live["MonthlyCharges"] + np.random.normal(
+            loc=step * 5, scale=10, size=len(live)
         )
 
         # -----------------------------------
         # Simulate tenure drift
         # -----------------------------------
-        live['tenure'] = (
-            live['tenure']
-            - np.random.normal(
-                loc=step * 2,
-                scale=3,
-                size=len(live)
-            )
-        )
+        live["tenure"] = live["tenure"] - np.random.normal(loc=step * 2, scale=3, size=len(live))
 
         # Prevent invalid negative tenure
-        live['tenure'] = live['tenure'].clip(lower=0)
+        live["tenure"] = live["tenure"].clip(lower=0)
 
         # -----------------------------------
         # Run drift detection
@@ -71,36 +57,25 @@ def simulate_drift_over_time(steps=10):
         drift = detect_drift(train, live)
 
         if not drift:
-            logger.warning(
-                "No drift results generated for step %d",
-                step
-            )
+            logger.warning("No drift results generated for step %d", step)
             continue
 
         # -----------------------------------
         # Get highest drift feature
         # -----------------------------------
-        top_feature = max(
-            drift.items(),
-            key=lambda x: x[1]["drift_score"]
-        )
+        top_feature = max(drift.items(), key=lambda x: x[1]["drift_score"])
 
-        timeline.append({
-            "step": step,
-            "feature": top_feature[0],
-            "drift_score": top_feature[1]["drift_score"]
-        })
+        timeline.append(
+            {"step": step, "feature": top_feature[0], "drift_score": top_feature[1]["drift_score"]}
+        )
 
         logger.info(
             "Step %d completed — top feature=%s score=%.4f",
             step,
             top_feature[0],
-            top_feature[1]["drift_score"]
+            top_feature[1]["drift_score"],
         )
 
-    logger.info(
-        "Timeline simulation completed — %d points generated",
-        len(timeline)
-    )
+    logger.info("Timeline simulation completed — %d points generated", len(timeline))
 
     return timeline

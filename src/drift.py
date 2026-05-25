@@ -1,12 +1,6 @@
 from scipy.stats import ks_2samp
 
-
-from config import (
-    SEVERITY_HIGH_THRESHOLD,
-    SEVERITY_MEDIUM_THRESHOLD,
-    P_VALUE_THRESHOLD
-)
-
+from config import P_VALUE_THRESHOLD, SEVERITY_HIGH_THRESHOLD, SEVERITY_MEDIUM_THRESHOLD
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -60,9 +54,7 @@ def detect_drift(train_df, live_df):
     # Find common columns
     # =========================================================
 
-    common_cols = list(
-        set(train_df.columns).intersection(set(live_df.columns))
-    )
+    common_cols = list(set(train_df.columns).intersection(set(live_df.columns)))
 
     if not common_cols:
         logger.error("No common columns found")
@@ -103,10 +95,7 @@ def detect_drift(train_df, live_df):
             live_col = live_df[col].dropna()
 
             if len(train_col) == 0 or len(live_col) == 0:
-                logger.warning(
-                    "Column %s empty after NaN removal",
-                    col
-                )
+                logger.warning("Column %s empty after NaN removal", col)
                 continue
 
             logger.info("Processing column: %s", col)
@@ -115,16 +104,11 @@ def detect_drift(train_df, live_df):
             # KS Test
             # -------------------------------------------------
 
-            stat, p_value = ks_2samp(
-                train_col,
-                live_col
-            )
+            stat, p_value = ks_2samp(train_col, live_col)
 
             drift_score = float(stat)
 
-            drift_detected = bool(
-                p_value < P_VALUE_THRESHOLD
-            )
+            drift_detected = bool(p_value < P_VALUE_THRESHOLD)
 
             severity = get_severity(drift_score)
 
@@ -134,27 +118,15 @@ def detect_drift(train_df, live_df):
 
             if severity == "high":
 
-                logger.warning(
-                    "High drift detected in %s (score=%.4f)",
-                    col,
-                    drift_score
-                )
+                logger.warning("High drift detected in %s (score=%.4f)", col, drift_score)
 
             elif severity == "medium":
 
-                logger.warning(
-                    "Medium drift detected in %s (score=%.4f)",
-                    col,
-                    drift_score
-                )
+                logger.warning("Medium drift detected in %s (score=%.4f)", col, drift_score)
 
             else:
 
-                logger.info(
-                    "Low drift in %s (score=%.4f)",
-                    col,
-                    drift_score
-                )
+                logger.info("Low drift in %s (score=%.4f)", col, drift_score)
 
             # -------------------------------------------------
             # Store results
@@ -164,20 +136,13 @@ def detect_drift(train_df, live_df):
                 "p_value": float(p_value),
                 "drift_detected": drift_detected,
                 "drift_score": drift_score,
-                "severity": severity
+                "severity": severity,
             }
 
         except Exception as e:
 
-            logger.error(
-                "Error processing column %s: %s",
-                col,
-                e
-            )
+            logger.error("Error processing column %s: %s", col, e)
 
-    logger.info(
-        "Drift detection completed — %d features analyzed",
-        len(drift_results)
-    )
+    logger.info("Drift detection completed — %d features analyzed", len(drift_results))
 
     return drift_results
