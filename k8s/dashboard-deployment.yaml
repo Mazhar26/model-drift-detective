@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drift-dashboard
+  labels:
+    app: drift-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drift-dashboard
+  template:
+    metadata:
+      labels:
+        app: drift-dashboard
+    spec:
+      containers:
+      - name: dashboard
+        image: drift-dashboard:latest  # Change to your container registry image tag
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8501
+        envFrom:
+        - configMapRef:
+            name: drift-detective-config
+        env:
+        - name: API_HOST
+          value: "drift-api-service"
+        - name: API_PORT
+          value: "8000"
+        - name: STREAMLIT_PORT
+          value: "8501"
+        livenessProbe:
+          tcpSocket:
+            port: 8501
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          tcpSocket:
+            port: 8501
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: logs-volume
+          mountPath: /app/logs
+      volumes:
+      - name: logs-volume
+        emptyDir: {}

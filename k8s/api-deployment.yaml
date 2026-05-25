@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drift-api
+  labels:
+    app: drift-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drift-api
+  template:
+    metadata:
+      labels:
+        app: drift-api
+    spec:
+      containers:
+      - name: api
+        image: drift-api:latest  # Change to your container registry image tag
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: drift-detective-config
+        env:
+        - name: API_HOST
+          value: "0.0.0.0"
+        - name: API_PORT
+          value: "8000"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: logs-volume
+          mountPath: /app/logs
+      volumes:
+      - name: data-volume
+        emptyDir: {}
+      - name: logs-volume
+        emptyDir: {}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: drift-dashboard-service
+  labels:
+    app: drift-dashboard
+spec:
+  ports:
+  - port: 8501
+    targetPort: 8501
+    nodePort: 30085
+    protocol: TCP
+  selector:
+    app: drift-dashboard
+  type: NodePort
