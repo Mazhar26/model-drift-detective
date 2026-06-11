@@ -7,7 +7,7 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.45%2B-FF4B4B?logo=streamlit&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6%2B-F7931E?logo=scikit-learn&logoColor=white)
 
-An AI-powered model monitoring platform that detects, explains, and recommends actions for **data drift** in machine learning models. Built with **FastAPI** + **Streamlit** on the Telco Customer Churn dataset.
+An AI-powered model monitoring platform that detects, explains, and recommends actions for data drift in machine learning models. Built with FastAPI, Streamlit, Docker, Kubernetes, and Terraform using Infrastructure-as-Code deployment practices.
 
 ---
 
@@ -173,6 +173,16 @@ model-drift-mvp/
 │   └── WA_Fn-UseC_-Telco-Customer-Churn.csv
 ├── .github/workflows/
 │   └── ci.yml                # GitHub Actions CI pipeline
+├── k8s/                      # Kubernetes manifests
+│   ├── api-deployment.yaml
+│   ├── dashboard-deployment.yaml
+│   ├── api-service.yaml
+│   ├── dashboard-service.yaml
+│   └── configmap.yaml
+├── terraform/                # Infrastructure as Code
+│   ├── main.tf
+│   ├── providers.tf
+│   └── terraform.tfstate*
 ├── dashboard.py              # Streamlit main dashboard
 ├── utils.py                  # Shared utilities (API client)
 ├── config.py                 # Centralized configuration
@@ -206,6 +216,86 @@ docker-compose down
 ```
 
 ---
+## ☸️ Kubernetes & Terraform Deployment
+
+The platform can also be deployed to Kubernetes using Terraform-managed infrastructure.
+
+### Infrastructure Provisioned
+
+Terraform manages:
+
+* Kubernetes Namespace
+* ConfigMap-based application configuration
+* FastAPI Deployment
+* Streamlit Dashboard Deployment
+* ClusterIP Service for API communication
+* NodePort Service for dashboard access
+
+### Deployment Architecture
+
+```
+Terraform
+    │
+    ▼
+Kubernetes Provider
+    │
+    ▼
+Minikube Cluster
+    │
+    ├── drift-api Deployment
+    │      └── ClusterIP Service (8000)
+    │
+    └── drift-dashboard Deployment
+           └── NodePort Service (8501)
+```
+
+### Initialize Terraform
+
+```bash
+cd terraform
+terraform init
+```
+
+### Review Infrastructure Changes
+
+```bash
+terraform plan
+```
+
+### Apply Infrastructure
+
+```bash
+terraform apply
+```
+
+### Verify Deployment
+
+```bash
+kubectl get all -n model-drift
+```
+
+Expected:
+
+```
+drift-api         1/1 Running
+drift-dashboard   1/1 Running
+```
+
+### Container Images
+
+Build application images:
+
+```bash
+docker build -t drift-api:latest .
+docker build -f Dockerfile.streamlit -t drift-dashboard:latest .
+```
+
+Load images into Minikube:
+
+```bash
+minikube image load drift-api:latest
+minikube image load drift-dashboard:latest
+```
 
 ## 🚀 Getting Started (Manual)
 
@@ -268,6 +358,17 @@ Navigate to **http://localhost:8501**
 
 6. **Recommendations** — Combines drift severity and accuracy impact to generate prioritized action items (immediate retrain, monitor, etc.).
 
+---
+## 🏗 Infrastructure Features
+
+* Terraform-managed Kubernetes infrastructure
+* Namespace isolation for workloads
+* ConfigMap-based runtime configuration
+* Kubernetes Deployments and Services
+* Multi-container application architecture
+* Docker image lifecycle management
+* Local Kubernetes development with Minikube
+* Infrastructure-as-Code deployment workflow
 ---
 
 ## 🧪 Testing
@@ -344,6 +445,8 @@ tests/test_recommend.py ....    [100%]
 - **ML:** scikit-learn (Random Forest), SciPy (KS-test)
 - **Data:** Pandas, NumPy
 - **Containerization:** Docker, Docker Compose
+- **Orchestration:** Kubernetes (Minikube)
+- **Infrastructure as Code:** Terraform
 - **CI/CD:** GitHub Actions
 - **Code Quality:** Black, Flake8, isort, pre-commit
 - **Dataset:** [Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
