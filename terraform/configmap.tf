@@ -1,0 +1,21 @@
+resource "kubernetes_config_map" "drift_detective_config" {
+  metadata {
+    name      = "drift-detective-config"
+    namespace = kubernetes_namespace.model_drift.metadata[0].name
+
+    labels = {
+      app = "model-drift-detective"
+    }
+  }
+
+  data = {
+    DEFAULT_THRESHOLD         = "0.1"
+    P_VALUE_THRESHOLD         = "0.05"
+    SEVERITY_HIGH_THRESHOLD   = "0.3"
+    SEVERITY_MEDIUM_THRESHOLD = "0.1"
+    LOG_LEVEL                 = "INFO"
+    MODEL_N_ESTIMATORS        = "100"
+    MODEL_RANDOM_STATE        = "42"
+    ALERTS_ENABLED            = "false"
+  }
+}

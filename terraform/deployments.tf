@@ -1,82 +1,3 @@
-resource "kubernetes_namespace" "model_drift"{
-    metadata{
-        name = "model-drift"
-    }
-}
-
-resource "kubernetes_config_map" "drift_detective_config" {
-  metadata {
-    name      = "drift-detective-config"
-    namespace = kubernetes_namespace.model_drift.metadata[0].name
-
-    labels = {
-      app = "model-drift-detective"
-    }
-  }
-
-  data = {
-    DEFAULT_THRESHOLD        = "0.1"
-    P_VALUE_THRESHOLD        = "0.05"
-    SEVERITY_HIGH_THRESHOLD  = "0.3"
-    SEVERITY_MEDIUM_THRESHOLD = "0.1"
-    LOG_LEVEL                = "INFO"
-    MODEL_N_ESTIMATORS       = "100"
-    MODEL_RANDOM_STATE       = "42"
-    ALERTS_ENABLED           = "false"
-  }
-}
-
-resource "kubernetes_service_v1" "drift_api_service" {
-  metadata {
-    name      = "drift-api-service"
-    namespace = kubernetes_namespace.model_drift.metadata[0].name
-
-    labels = {
-      app = "drift-api"
-    }
-  }
-
-  spec {
-    selector = {
-      app = "drift-api"
-    }
-
-    port {
-      port        = 8000
-      target_port = 8000
-      protocol    = "TCP"
-    }
-
-    type = "ClusterIP"
-  }
-}
-
-resource "kubernetes_service_v1" "drift_dashboard_service" {
-  metadata {
-    name      = "drift-dashboard-service"
-    namespace = kubernetes_namespace.model_drift.metadata[0].name
-
-    labels = {
-      app = "drift-dashboard"
-    }
-  }
-
-  spec {
-    selector = {
-      app = "drift-dashboard"
-    }
-
-    port {
-      port        = 8501
-      target_port = 8501
-      node_port   = 30085
-      protocol    = "TCP"
-    }
-
-    type = "NodePort"
-  }
-}
-
 resource "kubernetes_deployment_v1" "drift_api" {
   metadata {
     name      = "drift-api"
@@ -88,7 +9,7 @@ resource "kubernetes_deployment_v1" "drift_api" {
   }
 
   spec {
-    replicas = 1
+    replicas = var.replica_count
 
     selector {
       match_labels = {
@@ -116,7 +37,7 @@ resource "kubernetes_deployment_v1" "drift_api" {
           image_pull_policy = "IfNotPresent"
 
           port {
-            container_port = 8000
+            container_port = var.api_port
           }
 
           env_from {
@@ -157,7 +78,7 @@ resource "kubernetes_deployment_v1" "drift_dashboard" {
   }
 
   spec {
-    replicas = 1
+    replicas = var.replica_count
 
     selector {
       match_labels = {
@@ -185,7 +106,7 @@ resource "kubernetes_deployment_v1" "drift_dashboard" {
           image_pull_policy = "IfNotPresent"
 
           port {
-            container_port = 8501
+            container_port = var.dashboard_port
           }
 
           env_from {
