@@ -9,6 +9,16 @@
 
 An AI-powered model monitoring platform that detects, explains, and recommends actions for data drift in machine learning models. Built with FastAPI, Streamlit, Docker, Kubernetes, and Terraform using Infrastructure-as-Code deployment practices.
 
+## Highlights
+
+- Cloud-native deployment using Kubernetes and Terraform
+- Automated CI/CD pipelines with GitHub Actions
+- Dockerized FastAPI backend and Streamlit dashboard
+-  Automated container publishing to Docker Hub with GitHub Actions
+- Infrastructure-as-Code with modular Terraform design
+- Drift detection using KS-Test and Random Forest analysis
+- Configurable deployments through Kubernetes ConfigMaps
+
 ---
 
 ## 🧩 System Architecture
@@ -138,7 +148,7 @@ User ──▶ Streamlit Dashboard ──▶ HTTP /api/v1/* ──▶ FastAPI Ba
 
 ---
 
-## 🏗️ Architecture
+## 📁 Project Structure
 
 ```
 model-drift-mvp/
@@ -180,9 +190,15 @@ model-drift-mvp/
 │   ├── dashboard-service.yaml
 │   └── configmap.yaml
 ├── terraform/                # Infrastructure as Code
-│   ├── main.tf
+│   ├── namespace.tf
+│   ├── configmap.tf
+│   ├── services.tf
+│   ├── deployments.tf
+│   ├── variables.tf
+│   ├── terraform.tfvars
+│   ├── outputs.tf
 │   ├── providers.tf
-│   └── terraform.tfstate*
+│   └── .terraform.lock.hcl
 ├── dashboard.py              # Streamlit main dashboard
 ├── utils.py                  # Shared utilities (API client)
 ├── config.py                 # Centralized configuration
@@ -216,6 +232,7 @@ docker-compose down
 ```
 
 ---
+
 ## ☸️ Kubernetes & Terraform Deployment
 
 The platform can also be deployed to Kubernetes using Terraform-managed infrastructure.
@@ -297,6 +314,33 @@ minikube image load drift-api:latest
 minikube image load drift-dashboard:latest
 ```
 
+### Docker Hub Images
+
+Images are automatically built and published through GitHub Actions CI/CD.
+
+**API Image**
+
+```
+zami0/model-drift-api
+```
+
+**Dashboard Image**
+
+```
+zami0/model-drift-dashboard
+```
+
+Every successful CI run publishes:
+
+```
+latest
+<commit-sha>
+```
+
+tags for traceable deployments.
+
+---
+
 ## 🚀 Getting Started (Manual)
 
 ### 1. Clone & Install
@@ -341,7 +385,6 @@ Navigate to **http://localhost:8501**
 | `/api/v1/history` | GET | Retrieve drift check history (SQLite) |
 | `/api/v1/history/trend` | GET | Daily aggregated drift trends |
 
-
 ---
 
 ## 🔍 How It Works
@@ -359,16 +402,68 @@ Navigate to **http://localhost:8501**
 6. **Recommendations** — Combines drift severity and accuracy impact to generate prioritized action items (immediate retrain, monitor, etc.).
 
 ---
+
 ## 🏗 Infrastructure Features
 
 * Terraform-managed Kubernetes infrastructure
+* Modular Infrastructure-as-Code design
 * Namespace isolation for workloads
 * ConfigMap-based runtime configuration
 * Kubernetes Deployments and Services
-* Multi-container application architecture
-* Docker image lifecycle management
-* Local Kubernetes development with Minikube
-* Infrastructure-as-Code deployment workflow
+* Dockerized FastAPI and Streamlit workloads
+* Automated Docker image publishing to Docker Hub
+* GitHub Actions CI/CD pipeline
+* Local Kubernetes development using Minikube
+* Infrastructure validation through Terraform
+* Container build verification through CI
+
+---
+
+## 🔄 CI/CD Pipeline
+
+GitHub Actions automatically validates application and infrastructure changes on every push and pull request.
+
+### Pipeline Stages
+
+1. Test Suite
+   - Pytest unit tests
+   - Smoke tests
+   - FastAPI startup verification
+
+2. Code Quality
+   - Black formatting checks
+   - isort import validation
+   - flake8 linting
+
+3. Infrastructure Validation
+   - terraform fmt -check
+   - terraform init
+   - terraform validate
+
+4. Container Validation
+   - Build FastAPI Docker image
+   - Build Streamlit Docker image
+
+5. Artifact Publishing
+   - Publish API image to Docker Hub
+   - Publish Dashboard image to Docker Hub
+   - Tag images with latest and commit SHA
+
+### Deployment Flow
+
+```
+Git Push
+   ↓
+GitHub Actions
+   ↓
+Tests + Linting
+   ↓
+Terraform Validation
+   ↓
+Docker Build
+   ↓
+Docker Hub Push
+```
 ---
 
 ## 🧪 Testing
@@ -448,6 +543,7 @@ tests/test_recommend.py ....    [100%]
 - **Orchestration:** Kubernetes (Minikube)
 - **Infrastructure as Code:** Terraform
 - **CI/CD:** GitHub Actions
+- **Container Registry:** Docker Hub
 - **Code Quality:** Black, Flake8, isort, pre-commit
 - **Dataset:** [Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
 
