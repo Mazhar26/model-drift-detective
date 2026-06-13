@@ -111,21 +111,43 @@ jobs:
 
   # ── Job 4: Docker Build Validation ─────────────
   docker:
-    name: Docker Build Validation
+    name: Docker Build & Push
     needs:
       - test
       - lint
       - terraform
+
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build API Image
         run: |
-          docker build -t drift-api:test .
+          docker build \
+            -t zami0/model-drift-api:latest \
+            -t zami0/model-drift-api:${{ github.sha }} .
 
       - name: Build Dashboard Image
         run: |
-          docker build -f Dockerfile.streamlit -t drift-dashboard:test .
+          docker build \
+            -f Dockerfile.streamlit \
+            -t zami0/model-drift-dashboard:latest \
+            -t zami0/model-drift-dashboard:${{ github.sha }} .
+
+      - name: Push API Image
+        run: |
+          docker push zami0/model-drift-api:latest
+          docker push zami0/model-drift-api:${{ github.sha }}
+
+      - name: Push Dashboard Image
+        run: |
+          docker push zami0/model-drift-dashboard:latest
+          docker push zami0/model-drift-dashboard:${{ github.sha }}
