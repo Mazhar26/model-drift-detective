@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drift-api
+  namespace: {{ .Values.namespace }}
+
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: drift-api
+
+  template:
+    metadata:
+      labels:
+        app: drift-api
+
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+
+          ports:
+            - containerPort: {{ .Values.api.service.port }}
+
+          envFrom:
+            - configMapRef:
+                name: drift-detective-config
+
+          env:
+            - name: API_HOST
+              value: "0.0.0.0"
+
+            - name: API_PORT
+              value: "8000"

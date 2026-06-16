@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: drift-dashboard-service
+  namespace: {{ .Values.namespace }}
+
+spec:
+  selector:
+    app: drift-dashboard
+
+  ports:
+    - port: {{ .Values.dashboard.service.port }}
+      targetPort: {{ .Values.dashboard.service.port }}
+      nodePort: {{ .Values.dashboard.service.nodePort }}
+      protocol: TCP
+
+  type: {{ .Values.dashboard.service.type }}

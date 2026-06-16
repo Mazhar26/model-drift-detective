@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: drift-detective-config
+  namespace: {{ .Values.namespace }}
+
+data:
+  DEFAULT_THRESHOLD: "{{ .Values.config.DEFAULT_THRESHOLD }}"
+  P_VALUE_THRESHOLD: "{{ .Values.config.P_VALUE_THRESHOLD }}"
+  SEVERITY_HIGH_THRESHOLD: "{{ .Values.config.SEVERITY_HIGH_THRESHOLD }}"
+  SEVERITY_MEDIUM_THRESHOLD: "{{ .Values.config.SEVERITY_MEDIUM_THRESHOLD }}"
+  LOG_LEVEL: "{{ .Values.config.LOG_LEVEL }}"
+  MODEL_N_ESTIMATORS: "{{ .Values.config.MODEL_N_ESTIMATORS }}"
+  MODEL_RANDOM_STATE: "{{ .Values.config.MODEL_RANDOM_STATE }}"
+  ALERTS_ENABLED: "{{ .Values.config.ALERTS_ENABLED }}"
